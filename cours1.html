@@ -55,6 +55,50 @@
         <p><strong>Enseignant :</strong> [Nom de l'enseignant]</p>
         <p><strong>Horaires :</strong> [Horaires du cours]</p>
         <p><strong>Lieu :</strong> [Salle de cours]</p>
+        <h2><a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTpldP0n3WJVqlknw6XDBrewRBMUqq1PAHjj6zpifveib9GOgYpvfMaROPYsupnsAMTSndwwz8imRPz/pubhtml">Liste des étudiants</a></h2>
+        <h2>Liste des étudiants (générée à partir d'un fichier CSV)</h2>
+        <script>
+            // Charger les données d'un fichier CSV
+            async function loadCSV(filePath) {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Erreur lors du chargement du fichier CSV : ${response.statusText}`);
+                }
+                return await response.text();
+            }
+            // Exemple de contenu CSV            
+            const csvData = `Prénom,Nom
+                Haithem,Touileb
+                Ouarkia,BLIDI
+                Charlotte,Yaba-ngo
+                Sam,Szo, 
+                toto,titi`;
+            loadCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vTpldP0n3WJVqlknw6XDBrewRBMUqq1PAHjj6zpifveib9GOgYpvfMaROPYsupnsAMTSndwwz8imRPz/pub?output=csv").then(data => {
+                        console.log(data); // Affiche les données CSV dans la console
+                    }).catch(error => {
+                        console.error(error);
+                    });
+
+            // Fonction pour convertir le CSV en tableau HTML
+            function generateListFromCSV(csv) {
+            const rows = csv.split('\n').slice(1); // Ignorer l'en-tête
+            const ul = document.createElement('ul');
+            rows.forEach(row => {
+                const [prenom, nom] = row.split(',');
+                const li = document.createElement('li');
+                li.textContent = `${prenom} ${nom}`;
+                ul.appendChild(li);
+            });
+            return ul;
+            }
+
+            // Ajouter la liste générée au DOM
+            document.addEventListener('DOMContentLoaded', () => {
+            const listContainer = document.querySelector('main');
+            const ul = generateListFromCSV(csvData);
+            listContainer.appendChild(ul);
+            });
+        </script>
     </main>
     <footer>
         <p>&copy; 2025 Master 1 Humanités numériques - Parcours Net 1</p>
