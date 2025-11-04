@@ -76,8 +76,16 @@
                     .text(d => ` (https://github.com/${d["Votre compte GitHub"]}/cv)`);
                 etus.append("a")
                     .attr("target", "_blank")
-                    .attr("href", d => `https://${d["Votre compte GitHub"]}.github.io/cv`)
+                    .attr("href", d => `https://${d["Votre compte GitHub"]}.github.io/cv/`)
                     .text(d => ` (https://${d["Votre compte GitHub"]}.github.io/cv)`);
+                etus.append("a")
+                    .attr("target", "_blank")
+                    .attr("href", d => `https://${d["Votre compte GitHub"]}.github.io/cv/projet.html`)
+                    .text(d => {
+                         return ` (https://${d["Votre compte GitHub"]}.github.io/cv/projet.html)`;
+                    });
+
+
             });
         </script>
     </main>

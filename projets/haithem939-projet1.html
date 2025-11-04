@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Animation de Texte en Orbite</title>
+    <style>
+        /* Styles CSS pour la mise en page et l'animation */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* Fond clair */
+            margin: 0;
+            overflow: hidden; /* Empêche le défilement */
+        }
+
+        .orbit-container {
+            /* Conteneur principal pour centrer l'animation */
+            position: relative;
+            width: 300px; /* Taille de la zone de l'orbite */
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .center-object {
+            /* L'objet au centre (le "soleil") */
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #3498db; /* Couleur du cercle si vous n'utilisez pas d'image */
+            position: absolute;
+            z-index: 2; /* S'assure qu'il est au-dessus du texte */
+            /* Animation de rotation subtile sur lui-même */
+            animation: pulse-spin 6s linear infinite;
+        }
+
+        .center-image {
+            /* Style pour l'image/logo au centre */
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover; /* Assurez-vous que l'image couvre le cercle */
+            /* REMPLACER PAR VOTRE LOGO */
+            content: url('https://placehold.co/80x80/3498db/ffffff?text=LOGO'); 
+        }
+
+        .orbit-text {
+            /* Le texte qui tourne (la "planète") */
+            position: absolute;
+            z-index: 1;
+            font-family: 'Arial', sans-serif;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e74c3c; /* Couleur du texte */
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap; /* Empêche le texte de se casser */
+
+            /* Le cœur de l'animation : la rotation */
+            animation: orbit 15s linear infinite;
+        }
+
+        /* Définition de l'animation de rotation de l'objet central */
+        @keyframes pulse-spin {
+            0% { transform: rotate(0deg); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); }
+            50% { transform: rotate(180deg); box-shadow: 0 0 20px #3498db; }
+            100% { transform: rotate(360deg); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); }
+        }
+
+        /* Définition de l'animation de l'orbite */
+        @keyframes orbit {
+            0% { 
+                transform: rotate(0deg) translateX(150px) rotate(0deg); 
+            }
+            100% { 
+                transform: rotate(360deg) translateX(150px) rotate(-360deg); 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="orbit-container">
+        <div class="center-object">
+            <img class="center-image" alt="Logo de l'entreprise ou image centrale">
+        </div>
+
+        <div class="orbit-text">
+            CRÉATIF
+        </div>
+    </div>
+
+    <script>
+        // Vous pouvez ajuster le texte ou d'autres paramètres ici si nécessaire.
+        // Par exemple, changer le texte dynamiquement :
+        // document.querySelector('.orbit-text').textContent = 'BIENVENUE';
+    </script>
+
+</body>
+</html>
