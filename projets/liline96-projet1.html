@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime.js Form Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 304 112">
+        <g stroke-width="2" stroke="currentColor" stroke-linejoin="round" fill="none" fill-rule="evenodd">
+            <polygon id="path-1" points="152,4 170,38 204,56 170,74 152,108 134,74 100,56 134,38"></polygon>
+            <polygon style="opacity: 0" id="path-2" points="152,4 170,38 204,56 170,74 152,108 134,74 100,56 134,38"></polygon>
+        </g>
+    </svg>
+
+    <script type="module">
+import { animate, svg, utils } from 'https://esm.sh/animejs';
+
+const [ $path1, $path2 ] = utils.$('polygon');
+
+        function animateRandomPoints() {
+        // Update the points attribute on #path-2
+        utils.set($path2, { points: generatePoints() });
+        // Morph the points of #path-1 into #path-2
+        animate($path1, {
+            points: svg.morphTo($path2),
+            ease: 'inOutCirc',
+            duration: 500,
+            onComplete: animateRandomPoints
+        });
+        }
+
+        // Start the animation
+        animateRandomPoints();
+
+        // A function to generate random points on #path-2 on each iteration
+        // For demo purpose only
+        function generatePoints() {
+        const total = utils.random(4, 64);
+        const r1 = utils.random(4, 56);
+        const r2 = 56;
+        const isOdd = n => n % 2;
+        let points = '';
+        for (let i = 0, l = isOdd(total) ? total + 1 : total; i < l; i++) {
+            const r = isOdd(i) ? r1 : r2;
+            const a = (2 * Math.PI * i / l) - Math.PI / 2;
+            const x = 152 + utils.round(r * Math.cos(a), 0);
+            const y = 56 + utils.round(r * Math.sin(a), 0);
+            points += `${x},${y} `;
+        }
+        return points;
+        }
+    </script>
+</body>
+</html>
