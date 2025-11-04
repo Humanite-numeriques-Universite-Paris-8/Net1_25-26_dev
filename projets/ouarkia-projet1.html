@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Quizz Personnalisé</title>
+    <style>
+        /* CSS: Styles pour la mise en page et l'apparence */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #question-text {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+
+        .answer-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #bdc3c7;
+            background-color: #fff;
+            color: #2c3e50;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .answer-btn:hover {
+            background-color: #e8e8e8;
+            border-color: #95a5a6;
+        }
+
+        /* Styles pour les réponses sélectionnées/correctes/fausses */
+        .answer-btn.correct {
+            background-color: #2ecc71; /* Vert */
+            color: white;
+            border-color: #27ae60;
+            pointer-events: none; /* Désactive les clics après la sélection */
+        }
+
+        .answer-btn.incorrect {
+            background-color: #e74c3c; /* Rouge */
+            color: white;
+            border-color: #c0392b;
+            pointer-events: none;
+        }
+
+        /* Bouton Suivant */
+        #next-button {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #next-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Section du Résultat */
+        #result {
+            text-align: center;
+            font-size: 1.5em;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <h1>🔍 Quizz de Progression</h1>
+        <div id="quiz-box">
+            <p id="question-text">Question en cours...</p>
+            <div id="answer-buttons">
+                </div>
+            <button id="next-button">Suivant</button>
+        </div>
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // JAVASCRIPT: Logique du Quiz
+
+        // 1. Définissez vos questions ici !
+        // Chaque objet est une question. La propriété 'correct' doit correspondre exactement au texte de la bonne réponse.
+        const questions = [
+            {
+                question: "Quelle est la capitale de la France ?",
+                answers: [
+                    { text: "Londres", correct: false },
+                    { text: "Berlin", correct: false },
+                    { text: "Paris", correct: true },
+                    { text: "Rome", correct: false }
+                ]
+            },
+            {
+                question: "Qui a peint La Joconde ?",
+                answers: [
+                    { text: "Vincent van Gogh", correct: false },
+                    { text: "Léonard de Vinci", correct: true },
+                    { text: "Claude Monet", correct: false }
+                ]
+            },
+            {
+                question: "Combien de côtés a un heptagone ?",
+                answers: [
+                    { text: "6", correct: false },
+                    { text: "7", correct: true },
+                    { text: "8", correct: false }
+                ]
+            }
+        ];
+        // Note : Ajoutez autant de questions que nécessaire dans ce tableau !
+
+        // Variables de suivi
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false; // Empêche de cliquer plusieurs fois sur les réponses
+
+        const questionTextElement = document.getElementById('question-text');
+        const answerButtonsElement = document.getElementById('answer-buttons');
+        const nextButton = document.getElementById('next-button');
+        const resultElement = document.getElementById('result');
+        const quizBox = document.getElementById('quiz-box');
+
+        // Initialisation : Afficher la première question
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            nextButton.textContent = "Suivant";
+            nextButton.style.display = 'none';
+            resultElement.style.display = 'none';
+            quizBox.style.display = 'block';
+            showQuestion();
+        }
+
+        // Afficher la question courante et ses boutons
+        function showQuestion() {
+            resetState();
+            let currentQuestion = questions[currentQuestionIndex];
+            let questionNo = currentQuestionIndex + 1;
+            questionTextElement.textContent = `${questionNo}. ${currentQuestion.question}`;
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.textContent = answer.text;
+                button.classList.add('answer-btn');
+                answerButtonsElement.appendChild(button);
+                
+                // Stocker si la réponse est correcte directement sur le bouton
+                if (answer.correct) {
+                    button.dataset.correct = "true";
+                }
+                button.addEventListener('click', selectAnswer);
+            });
+        }
+
+        // Nettoyer les boutons et l'état
+        function resetState() {
+            answered = false;
+            nextButton.style.display = 'none';
+            while (answerButtonsElement.firstChild) {
+                answerButtonsElement.removeChild(answerButtonsElement.firstChild);
+            }
+        }
+
+        // Gérer le clic sur une réponse
+        function selectAnswer(e) {
+            if (answered) return; // Ne rien faire si la question a déjà été répondue
+
+            answered = true;
+            const selectedBtn = e.target;
+            const isCorrect = selectedBtn.dataset.correct === "true";
+
+            // Marquer le bouton sélectionné comme correct ou incorrect
+            if (isCorrect) {
+                selectedBtn.classList.add('correct');
+                score++;
+                // L'avancement du personnage pourrait se faire ici !
+                // Par exemple : console.log("Le personnage avance d'un pas !");
+            } else {
+                selectedBtn.classList.add('incorrect');
+            }
+            
+            // Révéler la bonne réponse même si le joueur s'est trompé
+            Array.from(answerButtonsElement.children).forEach(button => {
+                if (button.dataset.correct === "true") {
+                    button.classList.add('correct');
+                }
+                button.removeEventListener('click', selectAnswer); // Désactiver tous les boutons
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        // Gérer le clic sur le bouton "Suivant"
+        function handleNextButton() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // Afficher le résultat final
+        function showResult() {
+            quizBox.style.display = 'none';
+            resultElement.style.display = 'block';
+            resultElement.innerHTML = `Bravo ! Vous avez terminé le quizz.<br>Votre score final est de ${score} sur ${questions.length}.`;
+            
+            // Bouton pour rejouer
+            const restartButton = document.createElement('button');
+            restartButton.textContent = "Rejouer";
+            restartButton.id = "next-button"; // Réutiliser l'ID pour le style
+            restartButton.style.marginTop = "30px";
+            restartButton.addEventListener('click', startQuiz);
+            resultElement.appendChild(restartButton);
+        }
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length) {
+                handleNextButton();
+            } else {
+                startQuiz();
+            }
+        });
+
+        startQuiz(); // Lancement du quiz au chargement de la page
+    </script>
+
+</body>
+</html>
