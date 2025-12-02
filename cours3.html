@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cours d'introduction au développement Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background: #0078d7;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5rem; /* Augmente la taille du titre */
+        }
+        main {
+            padding: 2rem;
+        }
+        h1, h2 {
+            color: #0078d7;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem 0;
+            background: #333;
+            color: #fff;
+            margin-top: 2rem;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Cours d'introduction au développement Web</h1>
+        <p>Master 1 Humanités numériques - Parcours Net 1</p>
+    </header>
+    <main>
+        <h2>Bienvenue au cours</h2>
+        <p>Ce cours est conçu pour introduire les concepts fondamentaux du développement Web. Vous apprendrez les bases du HTML, du CSS et du JavaScript, ainsi que les bonnes pratiques pour créer des sites Web modernes et accessibles.</p>
+        <h2>Objectifs du cours</h2>
+        <ul>
+            <li>Comprendre la structure d'une page Web avec HTML</li>
+            <li>Apprendre à styliser une page avec CSS</li>
+            <li>Découvrir les bases de l'interactivité avec JavaScript</li>
+        </ul>
+        <h2>Informations pratiques</h2>
+        <p><strong>Enseignant :</strong> [Nom de l'enseignant]</p>
+        <p><strong>Horaires :</strong> [Horaires du cours]</p>
+        <p><strong>Lieu :</strong> [Salle de cours]</p>
+        <h2><a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTpldP0n3WJVqlknw6XDBrewRBMUqq1PAHjj6zpifveib9GOgYpvfMaROPYsupnsAMTSndwwz8imRPz/pubhtml">Liste des étudiants</a></h2>
+        <h2>Liste des étudiants (générée à partir d'un fichier CSV)</h2>
+        <ul id="student-list">
+        </ul>
+        <script>
+            // Charger les données d'un fichier CSV
+            let urlCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpldP0n3WJVqlknw6XDBrewRBMUqq1PAHjj6zpifveib9GOgYpvfMaROPYsupnsAMTSndwwz8imRPz/pub?output=csv";
+            d3.csv(urlCSV).then(data => {
+                console.log(data); // Affiche les données CSV dans la console
+                let etus = d3.select("#student-list").selectAll("li")
+                    .data(data)
+                    .enter()
+                    .append("li")
+                    .attr("id", (d,i) => `etu-${d["Votre compte GitHub"]}`)
+                    .text(d => `${d["Votre prénom"]} ${d["Votre nom"]}`);
+                etus.append("a")
+                    .attr("target", "_blank")
+                    .attr("href", d => `https://github.com/${d["Votre compte GitHub"]}/cv`)
+                    .text(d => ` (https://github.com/${d["Votre compte GitHub"]}/cv)`);
+                etus.append("a")
+                    .attr("target", "_blank")
+                    .attr("href", d => `https://${d["Votre compte GitHub"]}.github.io/cv/`)
+                    .text(d => ` (https://${d["Votre compte GitHub"]}.github.io/cv)`);
+                etus.append("a")
+                    .attr("target", "_blank")
+                    .attr("href", d => `https://${d["Votre compte GitHub"]}.github.io/cv/projet.html`)
+                    .text(d => {
+                         return ` (https://${d["Votre compte GitHub"]}.github.io/cv/projet.html)`;
+                    });
+                etus.append("button")
+                    .text(" Voir les versions du projet")
+                    .on("click", function(event, d) {
+                       console.log(`Versions du projet pour ${d["Votre prénom"]} ${d["Votre nom"]}:`);
+                       let lignes = d3.select("#etu-"+d["Votre compte GitHub"]).append("table").selectAll("tr").data(["","1","2","3","4","5","6"]).enter().append("tr");
+                       lignes.selectAll("td").data(l=>['doc','test','eval'].map(c=>{
+                            return {'l':l,'c':c}
+                        })).enter().append("td")
+                        .html(col => {
+                            let url = "";
+                            switch (col.c) {
+                                case 'doc':
+                                    url = `https://${d["Votre compte GitHub"]}.github.io/cv/projet${col.l}.html`;                                    
+                                    break;                            
+                                case 'test':
+                                    url = `https://${d["Votre compte GitHub"]}.github.io/cv/testprojet${col.l}.html`;                                    
+                                    break;                            
+                                case 'code':
+                                    url = `https://github.com/${d["Votre compte GitHub"]}/cv/blob/main/testprojet${col.l}.html`;                                    
+                                    break;                            
+                                case 'eval':
+                                    url = `https://docs.google.com/forms/d/e/1FAIpQLSdm4pHb2UikgutWNZ_zbn_FlhDrHu0r8luVjZJ1CwwXueCDlQ/viewform?embedded=true`;                                    
+                                    break;
+                            }
+                            return `<iframe width="800" height="600"  src="${url}"></iframe>`;
+                        });                       
+                    });
+
+
+            });
+        </script>
+    </main>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #0078d7;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <footer>
+        <p>&copy; 2025 Master 1 Humanités numériques - Parcours Net 1</p>
+    </footer>
+</body>
+</html>
