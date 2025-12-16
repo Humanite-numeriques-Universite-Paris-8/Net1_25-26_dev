@@ -90,26 +90,31 @@
                     .on("click", function(event, d) {
                        console.log(`Versions du projet pour ${d["Votre prénom"]} ${d["Votre nom"]}:`);
                        let lignes = d3.select("#etu-"+d["Votre compte GitHub"]).append("table").selectAll("tr").data(["","1","2","3","4","5","6"]).enter().append("tr");
-                       lignes.selectAll("td").data(l=>['doc','test','eval'].map(c=>{
+                       lignes.selectAll("td").data(l=>['num','doc','test','eval'].map(c=>{
                             return {'l':l,'c':c}
                         })).enter().append("td")
                         .html(col => {
                             let url = "";
-                            switch (col.c) {
-                                case 'doc':
-                                    url = `https://${d["Votre compte GitHub"]}.github.io/cv/projet${col.l}.html`;                                    
-                                    break;                            
-                                case 'test':
-                                    url = `https://${d["Votre compte GitHub"]}.github.io/cv/testprojet${col.l}.html`;                                    
-                                    break;                            
-                                case 'code':
-                                    url = `https://github.com/${d["Votre compte GitHub"]}/cv/blob/main/testprojet${col.l}.html`;                                    
-                                    break;                            
-                                case 'eval':
-                                    url = `https://docs.google.com/forms/d/e/1FAIpQLSdm4pHb2UikgutWNZ_zbn_FlhDrHu0r8luVjZJ1CwwXueCDlQ/viewform?embedded=true`;                                    
-                                    break;
+                            if(col.c==='num') {
+                                return `<h1>${col.l =="" ? "0" : col.l}</h1>`;
+                            }else{
+                                switch (col.c) {
+                                    case 'doc':
+                                        url = `https://${d["Votre compte GitHub"]}.github.io/cv/projet${col.l}.html`;                                    
+                                        break;                            
+                                    case 'test':
+                                        url = `https://${d["Votre compte GitHub"]}.github.io/cv/testprojet${col.l}.html`;                                    
+                                        break;                            
+                                    case 'code':
+                                        url = `https://github.com/${d["Votre compte GitHub"]}/cv/blob/main/testprojet${col.l}.html`;                                    
+                                        break;                            
+                                    case 'eval':
+                                        url = `https://docs.google.com/forms/d/e/1FAIpQLSdm4pHb2UikgutWNZ_zbn_FlhDrHu0r8luVjZJ1CwwXueCDlQ/viewform?embedded=true`;                                    
+                                        break;
+                                }
+                                return `<p><a target="_blank" href="${url}">${url}</a><iframe width="800" height="600"  src="${url}"></iframe>`;
                             }
-                            return `<iframe width="800" height="600"  src="${url}"></iframe>`;
+
                         });                       
                     });
 
