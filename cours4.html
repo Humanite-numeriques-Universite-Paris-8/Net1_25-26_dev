@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cours d'introduction au développement Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background: #0078d7;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5rem; /* Augmente la taille du titre */
+        }
+        main {
+            padding: 2rem;
+        }
+        h1, h2 {
+            color: #0078d7;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem 0;
+            background: #333;
+            color: #fff;
+            margin-top: 2rem;
+        }
+    </style>
+    <script src="assets/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Cours d'introduction au développement Web</h1>
+        <p>Master 1 Humanités numériques - Parcours Net 1</p>
+    </header>
+    <main>
+        <h2>Bienvenue sur le résultat de l'évaluation</h2>
+        <h3 id="titreEvalProjet">Evaluations des projets</h3>
+        <ul id="projet-eval">
+        </ul>
+        <h3 id="titreEvalEvaluateur">Evaluations des évaluateurs</h3>
+        <ul id="evaluateur-eval">
+        </ul>
+        <script>
+            // Charger les données d'un fichier CSV
+            //let urlCSVevals = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9IM3TAHJiWDn9fA5u3F9Eokwg1wPM4IGESA_C9Vi8f1oNyONfXoXLYxwJkVZF6oz8ZgZJWkbWWPx7/pub?gid=1390500407&single=true&output=csv",
+            //    urlCSVetus = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpldP0n3WJVqlknw6XDBrewRBMUqq1PAHjj6zpifveib9GOgYpvfMaROPYsupnsAMTSndwwz8imRPz/pub?output=csv",
+            let urlCSVevals = "data/EvaluationProjetsEtudiants.csv" ,
+                urlCSVetus = "data/ListeEtudiants.csv",
+                evalLibs = {"Non Conforme":0,"Partiellement Conforme":1,"Conforme":2,"Dépasse les attentes":5},
+                evalKeys = [
+                    {"col":"Aspect Technique: Qualité du Code (Lisibilité, structure, respect des standards)",'lib':'Qualité du Code','coef':1,'format':'int','max':5},
+                    {"col":"Aspect Technique: Fonctionnalité et Robustesse (Absence de bugs majeurs, gestion des erreurs)",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':5},
+                    {"col":"Aspect Design/UX: Interface Utilisateur (Attractivité, cohérence visuelle)",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':5},
+                    {"col":"Aspect Design/UX: Expérience Utilisateur (Facilité de navigation, intuitivité)",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Maîtrise HTML et sémantique]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Maîtrise CSS et Responsive Design]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Complexité et efficacité du JavaScript (front-end)]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Utilisation de librairie ou framework (ex: React, Vue, Node.js)]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Innovation et Originalité du Projet",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':10},
+                    {"col":"Pertinence des améliorations de la nouvelle version",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':10},
+                    {"col":"Note Globale Recommandée (sur 20)",'lib':'Note Global','coef':1,'format':'int','max':20}
+                ], projets, evaluateurs, etus, noteParfaite = {projet:{nbEval:0,note:0,echelle:true}, evaluateurs:0};
+
+            d3.csv(urlCSVevals).then(data => {
+
+                // Filtre les données pour ne garder que les entrées après une date spécifique
+                const filterDate = new Date('2025-12-16T15:00:00');
+                let evalsDM = data.filter(d => {
+                    // Convertit la date du format DD/MM/YYYY HH:mm:ss en objet Date valide
+                    const [datePart, timePart] = d.Horodateur.split(' ');
+                    const [day, month, year] = datePart.split('/');
+                    const isoDateString = `${year}-${month}-${day}T${timePart}`;
+                    const entryDate = new Date(isoDateString);
+                    return entryDate > filterDate;
+                });
+                //regroupe les évaluations par projet                
+                projets = d3.group(evalsDM,d=>d["corCrea"]);
+                evaluateurs = d3.group(evalsDM,d=>d["corEval"]);
+                d3.csv(urlCSVetus).then(data => {
+                    etus = data;
+                    calculerNoteParfaite();
+                    //Affiche les résultats des projets
+                    d3.select("#projet-eval").selectAll('li').data(projets).enter().append("li")
+                        .html(d=>{
+                            //vérifie le nom du créateur
+                            let etu = etus.find(e=>e['Votre compte GitHub']===d[0]);
+                            let nomEtu = etu ? etu['Votre prénom']+" "+etu['Votre nom']+" ("+etu['N° étudiant']+")" : '<b>INCONNU</b> '+d[0];
+                            return nomEtu+' = '+calculerNoteProjet(d[1]);
+                        })
+                    //Affiche les résultats des évaluateurs
+                    d3.select("#evaluateur-eval").selectAll('li').data(evaluateurs).enter().append("li")
+                        .html(d=>{
+                            //vérifie le nom de l'avaluateur
+                            let etu = etus.find(e=>e['Votre compte GitHub']===d[0]);
+                            let nomEtu = etu ? etu['Votre prénom']+" "+etu['Votre nom']+" ("+etu['N° étudiant']+")" : '<b>INCONNU</b> '+d[0];
+                            return nomEtu+' = '+calculerNoteEvaluateur(d[1]);
+                        })
+
+                });
+            });
+            function calculerNoteParfaite() {
+                noteParfaite.projet.nbEval = 6 * evaluateurs.size
+                noteParfaite.evaluation = 0;
+                evalKeys.forEach((v,k)=>{
+                    //ajoute la note pour les 6 versions
+                    noteParfaite.projet.note += v.max * v.coef * noteParfaite.projet.nbEval;
+                });
+                noteParfaite.projet.echelle = d3.scaleLinear()
+                                    .domain([0, noteParfaite.projet.note])
+                                    .range([0, 20]);
+                d3.select("#titreEvalProjet").append("div").html("Nb eval = "+noteParfaite.projet.nbEval+" Note Parfaite = "+noteParfaite.projet.note);
+                //le nom du créateur est bon
+                noteParfaite.evaluateurs = etus.length * 2;
+                //le nom de l'évaluateur est bon
+                noteParfaite.evaluateurs += evalKeys.length * 2;
+                //toutes les notes sont présentes
+                noteParfaite.evaluateurs += evalKeys.length * etus.length * 6;
+                d3.select("#titreEvalEvaluateur").append("div").html("Note Parfaite = "+noteParfaite.evaluateurs);
+            }            
+            function calculerNoteProjet(evals) {
+                let total = 0;
+                evals.forEach(e => {
+                    e.note = 0;
+                    evalKeys.forEach((v,k)=>{
+                        let val = 0;
+                        if(v.format=="int") {
+                            val = parseInt(e[v.col]);
+                        } else if(v.format=="evalLibs") {
+                            val = evalLibs[e[v.col]];
+                        }
+                        if(val) e.note += val * v.coef;
+                    });
+                    e.moyen = (e.note / Object.keys(evalKeys).length).toFixed(2);
+                    total += e.note;
+                });
+                //Calcul de la moyenne totale
+                return "Nb eval = "+evals.length+" - Total Point ="+total+" - Moyenne Eval ="+(total / evals.length).toFixed(2)+" - Note / 20 ="+noteParfaite.projet.echelle(total);
+            }
+            function calculerNoteEvaluateur(evals) {
+                let note = 0, total = 0;
+                evals.forEach(e => {
+                    //corrections sur le créateur
+                    e.noteCorCrea = e["corCrea"]!=e["Nom du créateur"] ? 
+                        e["corCrea"].toLowerCase()!=e["Nom du créateur"].toLowerCase() ? 
+                            e["corCrea"].trim()!=e["Nom du créateur"].trim() ? -2 : 1
+                            : 1
+                         : 2;
+                    total += 2;
+                    //corrections sur l'évaluateur
+                    e.noteCorEval = e["corEval"]!=e["Nom de l'Évaluateur"] ? 
+                        e["corEval"].toLowerCase()!=e["Nom de l'Évaluateur"].toLowerCase() ? 
+                            e["corEval"].toLowerCase()!=e["Nom de l'Évaluateur"].toLowerCase() ? -2 : 1
+                            : 1
+                         : 2;
+                    total += 2;
+                    //évaluation note manquante
+                    e.noteManquante = 0;
+                    evalKeys.forEach((v,k)=>{
+                        let val = 0;
+                        if(v.format=="int") {
+                            val = parseInt(e[v.col]);
+                        } else if(v.format=="evalLibs") {
+                            val = evalLibs[e[v.col]];
+                        }
+                        e.noteManquante = val ? 1 : 0;
+                        total += 1;
+                    });
+                    note += e.noteCorCrea + e.noteCorEval + e.noteManquante;
+                });
+                //Calcul de la moyenne totale
+                return "Nb eval = "+evals.length+" - Note = "+note+" / "+total;
+            }            
+        </script>
+    </main>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #0078d7;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <footer>
+        <p>&copy; 2025 Master 1 Humanités numériques - Parcours Net 1</p>
+    </footer>
+</body>
+</html>
