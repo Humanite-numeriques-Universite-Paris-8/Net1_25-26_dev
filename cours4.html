@@ -37,6 +37,11 @@
         }
     </style>
     <script src="assets/d3.v7.min.js"></script>
+    <script src="assets/boxplot.js"></script>
+    <script src="assets/histogram.js"></script>   
+    <script src="assets/stackedBarChart.js"></script>   
+    <script src="assets/wrap.js"></script>   
+
 </head>
 <body>
     <header>
@@ -45,10 +50,14 @@
     </header>
     <main>
         <h2>Bienvenue sur le résultat de l'évaluation</h2>
-        <h3 id="titreEvalProjet">Evaluations des projets</h3>
+        <h3 >Evaluations finales</h3>
+        <ul id="finale-eval">
+        </ul>
+        <h3 >Détails des évaluations</h3>
+        <h4 id="titreEvalProjet">Evaluations des projets</h4>
         <ul id="projet-eval">
         </ul>
-        <h3 id="titreEvalEvaluateur">Evaluations des évaluateurs</h3>
+        <h4 id="titreEvalEvaluateur">Evaluations des évaluateurs</h4>
         <ul id="evaluateur-eval">
         </ul>
         <script>
@@ -61,16 +70,17 @@
                 evalKeys = [
                     {"col":"Aspect Technique: Qualité du Code (Lisibilité, structure, respect des standards)",'lib':'Qualité du Code','coef':1,'format':'int','max':5},
                     {"col":"Aspect Technique: Fonctionnalité et Robustesse (Absence de bugs majeurs, gestion des erreurs)",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':5},
-                    {"col":"Aspect Design/UX: Interface Utilisateur (Attractivité, cohérence visuelle)",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':5},
-                    {"col":"Aspect Design/UX: Expérience Utilisateur (Facilité de navigation, intuitivité)",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':5},
-                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Maîtrise HTML et sémantique]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
-                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Maîtrise CSS et Responsive Design]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
-                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Complexité et efficacité du JavaScript (front-end)]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
-                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Utilisation de librairie ou framework (ex: React, Vue, Node.js)]",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'evalLibs','max':5},
-                    {"col":"Innovation et Originalité du Projet",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':10},
-                    {"col":"Pertinence des améliorations de la nouvelle version",'lib':'Fonctionnalité et Robustesse','coef':1,'format':'int','max':10},
+                    {"col":"Aspect Design/UX: Interface Utilisateur (Attractivité, cohérence visuelle)",'lib':'Interface Utilisateur','coef':1,'format':'int','max':5},
+                    {"col":"Aspect Design/UX: Expérience Utilisateur (Facilité de navigation, intuitivité)",'lib':'Expérience Utilisateur','coef':1,'format':'int','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Maîtrise HTML et sémantique]",'lib':'Maîtrise HTML et sémantique','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Maîtrise CSS et Responsive Design]",'lib':'Maîtrise CSS et Responsive Design','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Complexité et efficacité du JavaScript (front-end)]",'lib':'Complexité et efficacité du JavaScript','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Implémentation des technologies clés (HTML/CSS, JavaScript, Frameworks/Librairies) [Utilisation de librairie ou framework (ex: React, Vue, Node.js)]",'lib':'Utilisation de librairie ou framework','coef':1,'format':'evalLibs','max':5},
+                    {"col":"Innovation et Originalité du Projet",'lib':'Innovation et Originalité','coef':1,'format':'int','max':10},
+                    {"col":"Pertinence des améliorations de la nouvelle version",'lib':'Pertinence des améliorations','coef':1,'format':'int','max':10},
                     {"col":"Note Globale Recommandée (sur 20)",'lib':'Note Global','coef':1,'format':'int','max':20}
-                ], projets, evaluateurs, etus, noteParfaite = {projet:{nbEval:0,note:0,echelle:true}, evaluateurs:0};
+                ], projets, evaluateurs, etus, 
+                noteParfaite = {projet:{nbEval:0,note:0,echelle:true,details:[]}, evaluateurs:{nbEval:0,note:0,echelle:true,details:[]}};
 
             d3.csv(urlCSVevals).then(data => {
 
@@ -90,48 +100,232 @@
                 d3.csv(urlCSVetus).then(data => {
                     etus = data;
                     calculerNoteParfaite();
+                    //Affiche les résultats des évaluateurs
+                    d3.select("#evaluateur-eval").selectAll('li').data(evaluateurs).enter().append("li")
+                        .attr('id',d=>'evals'+d[0])
+                        .html(d=>{
+                            //vérifie le nom de l'avaluateur
+                            let etu = etus.find(e=>e['Votre compte GitHub']===d[0]);
+                            let nomEtu = etu ? etu['Votre prénom']+" "+etu['Votre nom']+" ("+etu['N° étudiant']+") "+etu['Votre compte GitHub'] : '<b>INCONNU</b> '+d[0];
+                            return '<h5>'+nomEtu+'</h5>'+calculerNoteEvaluateur(d);
+                        }).append('div').each(showDetailsEvaluateurs);
                     //Affiche les résultats des projets
                     d3.select("#projet-eval").selectAll('li').data(projets).enter().append("li")
+                        .attr('id',d=>'projet'+d[0])
                         .html(d=>{
                             //vérifie le nom du créateur
                             let etu = etus.find(e=>e['Votre compte GitHub']===d[0]);
                             let nomEtu = etu ? etu['Votre prénom']+" "+etu['Votre nom']+" ("+etu['N° étudiant']+")" : '<b>INCONNU</b> '+d[0];
-                            return nomEtu+' = '+calculerNoteProjet(d[1]);
-                        })
-                    //Affiche les résultats des évaluateurs
-                    d3.select("#evaluateur-eval").selectAll('li').data(evaluateurs).enter().append("li")
+                            return '<h5>'+nomEtu+'</h5>'+calculerNoteProjet(d);
+                        }).append('div').each(showDetailsEvals);
+                    //Affiche les résultats des évaluations finales
+                    d3.select("#finale-eval").selectAll('li').data(etus).enter().append("li")
                         .html(d=>{
-                            //vérifie le nom de l'avaluateur
-                            let etu = etus.find(e=>e['Votre compte GitHub']===d[0]);
-                            let nomEtu = etu ? etu['Votre prénom']+" "+etu['Votre nom']+" ("+etu['N° étudiant']+")" : '<b>INCONNU</b> '+d[0];
-                            return nomEtu+' = '+calculerNoteEvaluateur(d[1]);
-                        })
+                            let nomEtu = d['Votre prénom']+" "+d['Votre nom']+" ("+d['N° étudiant']+") "+d['Votre compte GitHub'];
+                            return '<h5>'+nomEtu+'</h5>'+calculerNoteFinale(d);
+                        })//.append('div').each(showDetailsEvaluateurs);
 
                 });
             });
+
+            function calculerNoteFinale(etu) {
+                //calcule les notes de cours
+                etu.pointsCours = 0
+                etu.noteCours = 0
+                etu.notePresence=0;
+                for (const key in etu) {
+                    if (key.startsWith('présence')) etu.notePresence += etu[key] ? parseInt(etu[key]) : -1;                    
+                }
+                //note parfaite = 30+45 = 75
+                etu.pointsCours = (parseInt(etu["note cv / 10"])*3)+((etu.notePresence+1)*3);
+                etu.noteCours = etu.pointsCours/75*20;
+                if(etu["points de cours 1"]) etu.noteCours+=parseInt(etu["points de cours 1"])/4;            
+                etu.noteFinale = (etu.noteCours
+                    +etu.projet.noteFinale
+                    +(etu.evaluations ? etu.evaluations.noteFinale :0)
+                    )/3;
+                return "- Note cours = "+etu.noteCours.toFixed(2)
+                    +"<br/> - Note projet = "+etu.projet.noteFinale.toFixed(2)
+                        +" <a href='#projet"+etu['Votre compte GitHub']+"' >details</a>"
+                    +"<br/> - Note évaluateur = "+(etu.evaluations ? etu.evaluations.noteFinale.toFixed(2) : 0)
+                        +" <a href='#evals"+etu['Votre compte GitHub']+"' >details</a>"
+                    +"<br/><b>Note finale = "+etu.noteFinale.toFixed(2)+"</b>"
+                    +"<br/>";
+
+
+
+            }            
+
+            
+            function showDetailsEvals(eval){
+                /* structure des données
+                {
+                "lib": "Qualité du Code",
+                "note": 3,
+                "evlt": "ouarkia",
+                "version": "1"
+                }
+                */
+                let evlts = Array.from(d3.group(eval.details,e=>e.evlt).keys()), 
+                    color = d3.scaleSequential([0, evlts.length], d3.interpolateRainbow),
+                    pops = evlts.map((k,i)=>{
+                        return {'id':k,'k':'evlt','c':color(i)}
+                    }),
+                    bp = new boxplot({'cont':d3.select(this),'data':eval.details.filter(d=>d.note>0)
+                            ,'group':'lib', 'mesure':'note', 'yHisto':'note', 'xHisto':'version'
+                            ,'pops':pops, 'width':1000,'height':100
+                            ,'titre':"Répartition des évaluations par critères"
+                            }),
+                //montre les notes par version
+                    popsEval = evlts.map((k,i)=>{
+                        return {'id':k,'k':'corEval','c':color(i)}
+                    }),
+                    bpV = new boxplot({'cont':d3.select(this),'data':eval[1]
+                        ,'group':"Version du projet", 'mesure':'note', 'yHisto':'note', 'xHisto':'corEval'
+                        ,'pops':popsEval, 'width':1000,'height':100
+                        ,'titre':"Répartition des notes par versions"
+                        }),
+                //montre les notes corrigées par version
+                    bpVcor = new boxplot({'cont':d3.select(this),'data':calculNotesCor(eval[1])
+                        ,'group':"version", 'mesure':'note', 'yHisto':'note', 'xHisto':'corEval'
+                        ,'pops':popsEval, 'width':1000,'height':100
+                        ,'titre':"Répartition des notes corrigées par versions"
+                        }),
+                    //calcule les notes finales
+                    etu = etus.find(e=>e['Votre compte GitHub']===eval[0]),
+                    noteGlobal = bp.getStat("Note Global");
+                etu.projet.noteGlobal = noteGlobal ? noteGlobal.value.median : eval.reco;
+                etu.projet.noteVersion = bpV.sumstat.s.length ? d3.sum(bpV.sumstat.s,s=>s.value.median)/bpV.sumstat.s.length : eval.reco;
+                etu.projet.noteVersionCor = bpVcor.sumstat.s.length ? d3.sum(bpVcor.sumstat.s,s=>s.value.median)/bpVcor.sumstat.s.length : eval.reco;
+                //sont valorisées les notes 
+                // données par les étudiants
+                // corrigées
+                etu.projet.noteFinale = (
+                        (etu.projet.noteGlobal*3)
+                        +eval.note
+                        +eval.reco
+                        +etu.projet.noteVersion
+                        +(etu.projet.noteVersionCor*2)
+                    )/8;
+                d3.select(this).append('div').html(
+                    '- Note globale = '+etu.projet.noteGlobal.toFixed(2)
+                    +'<br/> - Note version = '+etu.projet.noteVersion.toFixed(2)
+                    +'<br/> - Note version corrigée = '+etu.projet.noteVersionCor.toFixed(2)
+                    +'<br/><b>Note finale = '+etu.projet.noteFinale.toFixed(2)+'</b>'
+                )
+            }
+            function calculNotesCor(evals){
+                let notesCor = [];
+                //prise en compte du nombre de critère évalué dans la note
+                //plus il y a de critère, plus la note compte
+                //chaque note est pondérée par le note de l'évaluateur
+                //plus la version est récente plus elle compte 
+                evals.forEach(e=>{
+                    let etu = etus.find(et=>et['Votre compte GitHub']==e.corEval),
+                        v = parseInt(e["Version du projet"]),
+                        note = ((e.note*v)+etu.evaluations.noteFinale)/(v+1);
+                    for (let index = 0; index < e.nbEval; index++) {
+                        notesCor.push({'version':v,'note':note,'corEval':e.corEval})                        
+                    }
+                })
+                return notesCor; 
+            }
+
+            function showDetailsEvaluateurs(eval){
+                /* structure des données
+                {
+                "lib": "Qualité du Code",
+                "note": 3,
+                "evlt": "ouarkia",
+                }
+                */
+                let evlts = Array.from(d3.group(eval.details,e=>e.evlt).keys()), 
+                    color = d3.scaleSequential([0, evlts.length], d3.interpolateRainbow),
+                    pops = evlts.map((k,i)=>{
+                        return {'id':k,'k':'evlt','c':color(i)}
+                    }),
+                    /*
+                    ,bp = new boxplot({'cont':d3.select(this),'data':eval.details
+                            ,'group':'lib', 'mesure':'note', 'yHisto':'note', 'xHisto':'createur' 
+                            ,'pops':pops, 'width':800,'height':100
+                            });
+                    */
+                    dtDetails = [], keys = Array.from(d3.group(eval.details,e=>e.lib).keys()); 
+                    /*grouper par eval
+                    Array.from(d3.group(eval.details,e=>e.lib)).forEach(d=>{
+                        let createurs = Array.from(d3.group(d[1],e=>e.createur)), dt={};
+                        createurs.forEach(e=>{
+                            dt[e[0]]=d3.sum(e[1],n=>n.note);
+                        })
+                        dt.eval = d[0];
+                        dtDetails.push(dt);
+                    });
+                    stackedBarChart.render({
+                        conteneur: d3.select(this),
+                        data: dtDetails,
+                        keys: Array.from(d3.group(eval.details,e=>e.createur).keys()),
+                        width: 800,
+                        height: 500,
+                        xKey: 'eval',
+                        colors: d3.schemeSet2
+                    });
+                    */
+                   //grouper par createur
+                   colors = d3.scaleSequential([0, evlts.length], d3.interpolateRainbow)
+                   Array.from(d3.group(eval.details,e=>e.createur)).forEach(d=>{
+                        let evals = Array.from(d3.group(d[1],e=>e.lib)), dt={};
+                        evals.forEach(e=>{
+                            dt[e[0]]=d3.sum(e[1],n=>n.note);
+                        })
+                        dt.createur = d[0];
+                        dtDetails.push(dt);
+                    });                   
+                    stackedBarChart.render({
+                        conteneur: d3.select(this),
+                        data: dtDetails,
+                        keys: keys,
+                        width: 1000,
+                        height: 500,
+                        xKey: 'createur',
+                        scaleColor: d3.scaleSequential([0, keys.length], d3.interpolateRainbow)
+                    });
+
+            }
             function calculerNoteParfaite() {
-                noteParfaite.projet.nbEval = 6 * evaluateurs.size
+                //note parfaite pour les projets
+                noteParfaite.projet.nbEval = 6 * projets.size
                 noteParfaite.evaluation = 0;
                 evalKeys.forEach((v,k)=>{
                     //ajoute la note pour les 6 versions
-                    noteParfaite.projet.note += v.max * v.coef * noteParfaite.projet.nbEval;
+                    noteParfaite.projet.details.push({'lib':v.lib,'note':v.max * v.coef,'evlt':'samszo'});
+                    noteParfaite.projet.note += v.max * v.coef;
                 });
                 noteParfaite.projet.echelle = d3.scaleLinear()
                                     .domain([0, noteParfaite.projet.note])
                                     .range([0, 20]);
-                d3.select("#titreEvalProjet").append("div").html("Nb eval = "+noteParfaite.projet.nbEval+" Note Parfaite = "+noteParfaite.projet.note);
+                d3.select("#titreEvalProjet").append("div").html("Nb eval = "+noteParfaite.projet.nbEval+" - Points max / version = "+noteParfaite.projet.note+" = "+noteParfaite.projet.echelle(noteParfaite.projet.note)+" / 20");
+
+                //note parfaite pour les évaluateurs
+                let nbe = noteParfaite.evaluateurs;
+                nbe.nbProjet = etus.length * 6;
+                nbe.nbForm = etus.length * 6;
+                nbe.nbEval = nbe.nbProjet*evalKeys.length;
                 //le nom du créateur est bon
-                noteParfaite.evaluateurs = etus.length * 2;
+                nbe.pointsCreateur = nbe.nbForm * 2;
                 //le nom de l'évaluateur est bon
-                noteParfaite.evaluateurs += evalKeys.length * 2;
+                nbe.pointsEvaluateur = nbe.nbForm * 2;
                 //toutes les notes sont présentes
-                noteParfaite.evaluateurs += evalKeys.length * etus.length * 6;
-                d3.select("#titreEvalEvaluateur").append("div").html("Note Parfaite = "+noteParfaite.evaluateurs);
+                nbe.points = nbe.nbEval+nbe.nbProjet+nbe.pointsCreateur+nbe.pointsEvaluateur;
+                nbe.echelle = d3.scaleLinear()
+                    .domain([0, nbe.points])
+                    .range([0, 20]);
+                d3.select("#titreEvalEvaluateur").append("div").html("Nb projet = "+nbe.nbProjet+" Nb eval = "+nbe.nbEval+" Points max = "+nbe.points+" = "+nbe.echelle(nbe.points)+" / 20");
             }            
             function calculerNoteProjet(evals) {
                 let total = 0;
-                evals.forEach(e => {
-                    e.note = 0;
+                evals['details']=[];
+                evals[1].forEach(e => {
+                    e.points = 0;
                     evalKeys.forEach((v,k)=>{
                         let val = 0;
                         if(v.format=="int") {
@@ -139,47 +333,111 @@
                         } else if(v.format=="evalLibs") {
                             val = evalLibs[e[v.col]];
                         }
-                        if(val) e.note += val * v.coef;
+                        val = val ? val * v.coef : 0;
+                        evals['details'].push({'lib':v.lib,'note':val,'evlt':e["corEval"],'version':e["Version du projet"]});
+                        e.points += val;
                     });
-                    e.moyen = (e.note / Object.keys(evalKeys).length).toFixed(2);
-                    total += e.note;
+                    //calcul la note sur / 20
+                    e["Note Globale Recommandée (sur 20)"] = parseInt(e["Note Globale Recommandée (sur 20)"]);
+                    e.note = noteParfaite.projet.echelle(e.points);
+                    //e.moyen = e.points / Object.keys(evalKeys).length
+                    total += e.points;
                 });
-                //Calcul de la moyenne totale
-                return "Nb eval = "+evals.length+" - Total Point ="+total+" - Moyenne Eval ="+(total / evals.length).toFixed(2)+" - Note / 20 ="+noteParfaite.projet.echelle(total);
+                //Calcul la note finale
+                let note = (d3.sum(evals[1], e => e.note)/evals[1].length),
+                    recos = evals[1].filter(e=>e["Note Globale Recommandée (sur 20)"]!=""),
+                    reco = (d3.sum(recos, e => e["Note Globale Recommandée (sur 20)"])/recos.length),
+                    extNote = d3.extent(evals[1], e => e.note),
+                    extReco = d3.extent(evals[1], e => e["Note Globale Recommandée (sur 20)"]),
+                    corNotes = evals[1].filter(e=>e.note!=extNote[0] && e.note!=extNote[1]),
+                    corNote = d3.sum(corNotes, e => e.note)/corNotes.length;
+                evals.note = note;
+                evals.reco = reco;
+                evals.extNote = extNote;
+                evals.extReco = extReco;
+                //enregistre dans le tableau des étudiants
+                let etu = etus.find(e=>e['Votre compte GitHub']===evals[0]);
+                etu.projet = evals;
+                return "Nb eval = "+evals[1].length+" - Total Point ="+total
+                    //+" - Moyenne points ="+(total / evals[1].length).toFixed(2)
+                    +"<br/> - Note ("+extNote[0]
+                    +" -> "+extNote[1]
+                    +") = "+note.toFixed(2)
+                    +"<br/> - Note reco ("+extReco[0]
+                    +" -> "+extReco[1]
+                    +") = "+reco.toFixed(2)
+                    //+"<br/> - Note finale ="+((note+reco)/2).toFixed(2)
+                    +"<br/>";
             }
             function calculerNoteEvaluateur(evals) {
-                let note = 0, total = 0;
-                evals.forEach(e => {
-                    //corrections sur le créateur
-                    e.noteCorCrea = e["corCrea"]!=e["Nom du créateur"] ? 
-                        e["corCrea"].toLowerCase()!=e["Nom du créateur"].toLowerCase() ? 
-                            e["corCrea"].trim()!=e["Nom du créateur"].trim() ? -2 : 1
-                            : 1
-                         : 2;
-                    total += 2;
-                    //corrections sur l'évaluateur
-                    e.noteCorEval = e["corEval"]!=e["Nom de l'Évaluateur"] ? 
-                        e["corEval"].toLowerCase()!=e["Nom de l'Évaluateur"].toLowerCase() ? 
-                            e["corEval"].toLowerCase()!=e["Nom de l'Évaluateur"].toLowerCase() ? -2 : 1
-                            : 1
-                         : 2;
-                    total += 2;
-                    //évaluation note manquante
-                    e.noteManquante = 0;
-                    evalKeys.forEach((v,k)=>{
-                        let val = 0;
-                        if(v.format=="int") {
-                            val = parseInt(e[v.col]);
-                        } else if(v.format=="evalLibs") {
-                            val = evalLibs[e[v.col]];
-                        }
-                        e.noteManquante = val ? 1 : 0;
-                        total += 1;
+                //evals[0]=="Haithem939"
+                let points = 0, total = 0, projets = d3.group(evals[1],e=>e.corCrea+"_"+e['Version du projet']), nbEval =0,
+                    corEvals = [], evalsTrop = Array.from(projets).filter(f=>f[1].length>1);
+                evalsTrop.forEach(p=>{
+                        corEvals[p[1][0].corCrea+"_"+p[1][0]['Version du projet']]=p[1][p[1].length-1];
                     });
-                    note += e.noteCorCrea + e.noteCorEval + e.noteManquante;
+                evals.noteNbProjet = projets.size/noteParfaite.evaluateurs.nbProjet*20;
+                points += projets.size;
+                evals.noteNbForm = evals[1].length/noteParfaite.evaluateurs.nbForm*20;
+                points += evals[1].length;
+
+                evals['details']=[];
+                evals[1].forEach(e => {
+                    //ne prend pas en compte les évaluations en double
+                    let skip = corEvals[e.corCrea+"_"+e['Version du projet']] ? 
+                        corEvals[e.corCrea+"_"+e['Version du projet']].Horodateur != e.Horodateur ? true : false : false;
+                    if(!skip){
+
+                        //corrections sur le créateur
+                        e.noteCorCrea = e["corCrea"]!=e["Nom du créateur"] ? 
+                            e["corCrea"].toLowerCase()!=e["Nom du créateur"].toLowerCase() ? 
+                                e["corCrea"].trim()!=e["Nom du créateur"].trim() ? 0  : 1
+                                : 1
+                            : 2;
+                        points += e.noteCorCrea;
+                        evals['details'].push({'lib':"Correction créateur",'note':e.noteCorCrea,'evlt':e["corEval"],'date':e.Horodateur,'createur':e.corCrea});
+
+                        //corrections sur l'évaluateur
+                        e.noteCorEval = e["corEval"]!=e["Nom de l'Évaluateur"] ? 
+                            e["corEval"].toLowerCase()!=e["Nom de l'Évaluateur"].toLowerCase() ? 
+                                e["corEval"].toLowerCase()!=e["Nom de l'Évaluateur"].toLowerCase() ? 0 : 1
+                                : 1
+                            : 2;
+                        points += e.noteCorEval;
+                        evals['details'].push({'lib':"Correction évaluateur",'note':e.noteCorEval,'evlt':e["corEval"],'date':e.Horodateur,'createur':e.corCrea});
+
+                        //évaluation note manquante
+                        e.nbEval = 0;
+                        evalKeys.forEach((v,k)=>{
+                            let val = 0;
+                            if(v.format=="int") {
+                                val = parseInt(e[v.col]);
+                            } else if(v.format=="evalLibs") {
+                                val = evalLibs[e[v.col]];
+                            }
+                            e.nbEval += val ? 1 : 0;
+                            evals['details'].push({'lib':"Nb eval "+v.lib,'note':val ? 1 : 0,'evlt':e["corEval"],'date':e.Horodateur,'createur':e.corCrea});
+                        });
+                        points += e.nbEval;
+                    }
                 });
+                nbEval = d3.sum(evals[1],e=>e.nbEval);
+                evals.noteCorEval = d3.sum(evals.details.filter(e=>e.lib=="Correction évaluateur"),ce=>ce.note)/noteParfaite.evaluateurs.pointsEvaluateur*20;
+                evals.noteCorCrea = d3.sum(evals.details.filter(e=>e.lib=="Correction créateur"),ce=>ce.note)/noteParfaite.evaluateurs.pointsCreateur*20;
+                evals.noteNbEval = (nbEval/noteParfaite.evaluateurs.nbEval*20);
+                evals.notePoint = noteParfaite.evaluateurs.echelle(points);
+                evals.noteFinale = (evals.noteNbProjet+evals.noteNbEval+evals.notePoint+evals.noteCorEval+evals.noteCorCrea)/5;
+                //enregistre dans le tableau des étudiants
+                let etu = etus.find(e=>e['Votre compte GitHub']===evals[0]);
+                etu.evaluations = evals;
                 //Calcul de la moyenne totale
-                return "Nb eval = "+evals.length+" - Note = "+note+" / "+total;
+                return "- Nb projet = "+projets.size+" / "+noteParfaite.evaluateurs.nbProjet+" = "+evals.noteNbProjet.toFixed(2)+" / 20"
+                    +"<br/> - Nb eval = "+nbEval+" / "+noteParfaite.evaluateurs.nbEval+" = "+evals.noteNbEval.toFixed(2)+" / 20 (évaluation en trop = "+d3.sum(evalsTrop.map(et=>et[1].length-1))+")"
+                    +"<br/> - Total Point = "+points+" / "+noteParfaite.evaluateurs.points+" = "+evals.notePoint.toFixed(2)+" / 20"
+                    +"<br/> - Note correction évaluateur = "+evals.noteCorEval.toFixed(2)
+                    +"<br/> - Note correction créateur = "+evals.noteCorCrea.toFixed(2)
+                    +"<br/> - <b>Note finale = "+evals.noteFinale.toFixed(2)+"</b>"
+                    +"<br/>";
             }            
         </script>
     </main>
